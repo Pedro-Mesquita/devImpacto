@@ -1,1 +1,1 @@
-#Devs de Impacto - Segurnaça Alimentar
+#Devs de Impacto - Segurança Alimentar
