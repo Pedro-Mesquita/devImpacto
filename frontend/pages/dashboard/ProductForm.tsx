@@ -5,41 +5,66 @@ import { Card } from '../../components/Card';
 import { Check, Info, Sparkles, AlertTriangle, Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-export const ProductForm: React.FC = () => {
+type ProductFormProps = { embedded?: boolean };
+
+export const ProductForm: React.FC<ProductFormProps> = ({ embedded = false }) => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   
   // Mock State
   const [formData, setFormData] = useState({
-    name: '',
-    quantity: '',
-    expiry: '',
-    marketPrice: '8.50'
+    nome: '',
+    categoria: 'Frutas',
+    data_colheita: '',
+    data_validade: '',
+    preco_base: '8.50',
   });
 
-  const handleSuggest = () => {
-    setLoading(true);
-    setTimeout(() => {
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      // TODO: derive cliente_id from auth/session; using demo UUID for now
+      const cliente_id = 'b3ff7503-3832-44c6-97c2-b0f9bffdf3f0';
+      const res = await fetch('/api/produtos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cliente_id,
+          nome: formData.nome,
+          categoria: formData.categoria,
+          data_colheita: formData.data_colheita || null,
+          data_validade: formData.data_validade,
+          preco_base: Number(formData.preco_base),
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await res.json();
+      navigate('/market/products');
+    } catch (e) {
+      console.error(e);
+      alert('Falha ao salvar produto.');
+    } finally {
       setLoading(false);
-      setStep(2);
-    }, 1500);
+    }
   };
 
   const handleConfirm = () => {
     navigate('/market');
   };
 
-  return (
-    <Layout role="market">
+  const content = (
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-2xl font-bold text-prato-dark mb-6">
-          {step === 1 ? 'Cadastrar Novo Produto' : 'Sugestão de Precificação Social'}
-        </h1>
+        {/* Avoid duplicate title when embedded in a modal */}
+        {!embedded && (
+          <h1 className="text-2xl font-bold text-prato-dark mb-6">
+            {step === 1 ? 'Cadastrar Novo Produto' : 'Sugestão de Precificação Social'}
+          </h1>
+        )}
 
         {step === 1 && (
           <Card>
-            <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); handleSuggest(); }}>
+            <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-prato-dark">Nome do Produto</label>
@@ -47,13 +72,13 @@ export const ProductForm: React.FC = () => {
                     required
                     className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-prato-green outline-none"
                     placeholder="Ex: Tomate Italiano"
-                    value={formData.name}
-                    onChange={e => setFormData({...formData, name: e.target.value})}
+                    value={formData.nome}
+                    onChange={e => setFormData({...formData, nome: e.target.value})}
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-prato-dark">Categoria</label>
-                  <select className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-prato-green outline-none">
+                  <select className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-prato-green outline-none" value={formData.categoria} onChange={e => setFormData({...formData, categoria: e.target.value})}>
                     <option>Frutas</option>
                     <option>Legumes</option>
                     <option>Verduras</option>
@@ -64,38 +89,37 @@ export const ProductForm: React.FC = () => {
 
               <div className="grid md:grid-cols-3 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-prato-dark">Quantidade (kg/un)</label>
+                  <label className="text-sm font-medium text-prato-dark">Data da Colheita</label>
                   <input 
-                    type="number" 
-                    required
+                    type="date" 
                     className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-prato-green outline-none"
-                    value={formData.quantity}
-                    onChange={e => setFormData({...formData, quantity: e.target.value})}
+                    value={formData.data_colheita}
+                    onChange={e => setFormData({...formData, data_colheita: e.target.value})}
                   />
                 </div>
                 <div className="space-y-2">
-                   <label className="text-sm font-medium text-prato-dark">Validade</label>
+                   <label className="text-sm font-medium text-prato-dark">Data de Validade</label>
                    <input 
                     type="date" 
                     required
                     className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-prato-green outline-none"
-                    value={formData.expiry}
-                    onChange={e => setFormData({...formData, expiry: e.target.value})}
+                    value={formData.data_validade}
+                    onChange={e => setFormData({...formData, data_validade: e.target.value})}
                    />
                 </div>
                  <div className="space-y-2">
-                   <label className="text-sm font-medium text-prato-dark">Preço Mercado (R$)</label>
+                   <label className="text-sm font-medium text-prato-dark">Preço Base (R$)</label>
                    <input 
                     type="number" step="0.01"
                     className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-prato-green outline-none"
-                    value={formData.marketPrice}
-                    onChange={e => setFormData({...formData, marketPrice: e.target.value})}
+                    value={formData.preco_base}
+                    onChange={e => setFormData({...formData, preco_base: e.target.value})}
                    />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-prato-dark">Estado de Conservação / Obs</label>
+                <label className="text-sm font-medium text-prato-dark">Observações</label>
                 <textarea 
                   className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-prato-green outline-none h-24 resize-none"
                   placeholder="Ex: Maduros, ideais para molho. Embalagem levemente amassada."
@@ -104,8 +128,8 @@ export const ProductForm: React.FC = () => {
 
               <div className="pt-4 flex gap-4">
                 <Button variant="outline" type="button" onClick={() => navigate('/market')}>Cancelar</Button>
-                <Button type="submit" loading={loading} icon={<Sparkles size={18}/>}>
-                  Gerar Sugestão Inteligente
+                <Button type="submit" loading={loading}>
+                  Salvar
                 </Button>
               </div>
             </form>
@@ -181,6 +205,15 @@ export const ProductForm: React.FC = () => {
           </div>
         )}
       </div>
+  );
+
+  if (embedded) {
+    return content;
+  }
+
+  return (
+    <Layout role="market">
+      {content}
     </Layout>
   );
 };

@@ -6,6 +6,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   icon?: React.ReactNode;
+  fullWidth?: boolean;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -16,6 +17,7 @@ export const Button: React.FC<ButtonProps> = ({
   icon,
   className = '',
   disabled,
+  fullWidth = false,
   ...props
 }) => {
   const baseStyles = "inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
@@ -34,10 +36,13 @@ export const Button: React.FC<ButtonProps> = ({
     lg: "px-8 py-4 text-lg",
   };
 
+  const widthClass = fullWidth ? 'w-full' : '';
+
   return (
     <button
-      className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${widthClass} ${className}`}
       disabled={disabled || loading}
+      // prevent forwarding custom props
       {...props}
     >
       {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}

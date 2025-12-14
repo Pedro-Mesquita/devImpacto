@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Layout } from '../../components/Layout';
 import { MetricCard, Card, CardHeader } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { Package, Heart, CheckCircle, Users, AlertTriangle, TrendingUp, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Modal } from '../../components/Modal';
+import { ProductForm } from './ProductForm';
 
 const data = [
   { name: 'Jan', kg: 400 },
@@ -17,6 +19,7 @@ const data = [
 
 export const MarketDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const [openProductModal, setOpenProductModal] = useState(false);
 
   return (
     <Layout role="market">
@@ -25,7 +28,7 @@ export const MarketDashboard: React.FC = () => {
           <h1 className="text-2xl font-bold text-prato-dark">Visão Geral</h1>
           <p className="text-prato-muted">Bem-vindo, Supermercado Central</p>
         </div>
-        <Button onClick={() => navigate('/market/new-product')} icon={<Plus size={20}/>}>
+        <Button onClick={() => setOpenProductModal(true)} icon={<Plus size={20}/>}>
           Novo Produto
         </Button>
       </div>
@@ -137,6 +140,11 @@ export const MarketDashboard: React.FC = () => {
           <Button variant="ghost" className="w-full mt-4 text-sm">Ver todo histórico</Button>
         </Card>
       </div>
+
+      {/* Product Modal */}
+      <Modal open={openProductModal} onClose={() => setOpenProductModal(false)} title="Cadastrar Novo Produto">
+        <ProductForm embedded />
+      </Modal>
     </Layout>
   );
 };
