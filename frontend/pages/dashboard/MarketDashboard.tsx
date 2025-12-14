@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Layout } from '../../components/Layout';
 import { MetricCard, Card, CardHeader } from '../../components/Card';
 import { Button } from '../../components/Button';
@@ -20,6 +20,53 @@ const data = [
 export const MarketDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [openProductModal, setOpenProductModal] = useState(false);
+  const [vendidosPorLote, setVendidosPorLote] = useState<Array<{ lote_id: string; vendido_total_sum: number }>>([]);
+  const [loadingVendidos, setLoadingVendidos] = useState(false);
+  const [vendidosError, setVendidosError] = useState<string | null>(null);
+
+  // Resolve clienteId from auth/session storage; fallback to a mocked id if missing
+  // Mocked cliente UUID provided
+  const clienteId = 'b3ff7503-3832-44c6-97c2-b0f9bffdf3f0';
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchVendidos() {
+      setLoadingVendidos(true);
+      setVendidosError(null);
+      try {
+        const res = await fetch(`/api/clientes/${clienteId}/estoque/vendido-total`);
+        if (!res.ok) {
+          throw new Error(`Falha ao carregar vendido-total: ${res.status}`);
+        }
+        const json = await res.json();
+        if (!cancelled) {
+          setVendidosPorLote(Array.isArray(json.vendidos) ? json.vendidos : []);
+        }
+      } catch (err: any) {
+        if (!cancelled) setVendidosError(err?.message || 'Erro ao carregar');
+      } finally {
+        if (!cancelled) setLoadingVendidos(false);
+      }
+    }
+    fetchVendidos();
+    return () => { cancelled = true; };
+  }, [clienteId]);
+
+  const descarteEvitadoKg = useMemo(() => {
+    // Sum all vendido_total_sum across lotes; assume unidade = kg
+    const total = vendidosPorLote.reduce((acc, r) => acc + (Number(r.vendido_total_sum) || 0), 0);
+    return total;
+  }, [vendidosPorLote]);
+
+  const descarteEvitadoValue = useMemo(() => {
+    // Show in tons when >= 1000 kg
+    const kg = descarteEvitadoKg;
+    if (!Number.isFinite(kg) || kg <= 0) return loadingVendidos ? '...' : '0 kg';
+    if (kg >= 1000) {
+      return `${(kg / 1000).toFixed(1)} ton`;
+    }
+    return `${kg.toFixed(0)} kg`;
+  }, [descarteEvitadoKg, loadingVendidos]);
 
   return (
     <Layout role="market">
@@ -69,22 +116,10 @@ export const MarketDashboard: React.FC = () => {
           trendType="warning"
         />
         <MetricCard
-          icon={<Heart size={24} />}
-          label="Doações / Ofertas"
-          value="143"
-          trend="+28%"
-        />
-        <MetricCard
           icon={<CheckCircle size={24} />}
           label="Descarte Evitado"
-          value="2.3 ton"
+          value={descarteEvitadoValue}
           trend="+15%"
-        />
-        <MetricCard
-          icon={<Users size={24} />}
-          label="Famílias Impactadas"
-          value="856"
-          trend="+42%"
         />
       </div>
 
@@ -122,8 +157,6 @@ export const MarketDashboard: React.FC = () => {
             {[
               { name: 'Banana Prata', qtd: '15kg', entity: 'ONG Prato Cheio', time: 'Há 2h' },
               { name: 'Tomate Carmen', qtd: '30kg', entity: 'Cozinha Comunitária', time: 'Há 4h' },
-              { name: 'Pão Francês', qtd: '5kg', entity: 'Abrigo Esperança', time: 'Há 5h' },
-              { name: 'Iogurte Natural', qtd: '20un', entity: 'Escola Municipal', time: 'Ontem' },
             ].map((item, idx) => (
               <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-100">
                 <div>

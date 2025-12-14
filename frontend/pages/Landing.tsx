@@ -23,11 +23,32 @@ export const Landing: React.FC = () => {
             Uma plataforma inteligente que transforma risco de desperdício em oportunidade de nutrir vidas, conectando mercados a entidades sociais.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" onClick={() => navigate('/login')} icon={<Store size={20}/>}>
-              Sou Mercado
+            <Button
+              size="lg"
+              onClick={() => {
+                try {
+                  localStorage.setItem('preset_role', 'market');
+                } catch (_) {}
+                navigate('/login');
+              }}
+              icon={<Store size={20}/>}
+            >
+              Sou Vendedor
             </Button>
-            <Button variant="outline" size="lg" onClick={() => navigate('/login')} icon={<Heart size={20}/>}>
-              Sou Entidade
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => {
+                try {
+                  // Clear any previous seller preset to avoid locking the login select
+                  localStorage.removeItem('preset_role');
+                  localStorage.setItem('force_role', 'ngo');
+                } catch (_) {}
+                navigate('/login');
+              }}
+              icon={<Heart size={20}/>}
+            >
+              Sou Comprador
             </Button>
           </div>
         </div>

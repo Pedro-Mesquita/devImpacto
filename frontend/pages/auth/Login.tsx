@@ -7,7 +7,24 @@ import { UserRole } from '../../types';
 export const Login: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [role, setRole] = useState<UserRole | 'public'>('public');
+  const [role, setRole] = useState<UserRole | 'public'>(() => {
+    try {
+      const preset = localStorage.getItem('preset_role');
+      if (preset === 'market' || preset === 'ngo' || preset === 'beneficiary') {
+        return preset as UserRole;
+      }
+    } catch (_) {}
+    return 'public';
+  });
+  const [roleLocked] = useState<boolean>(() => {
+    try {
+      const preset = localStorage.getItem('preset_role');
+      // Lock only when coming from seller preset; buyers should still choose their specific case
+      return Boolean(preset);
+    } catch (_) {
+      return false;
+    }
+  });
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -15,6 +32,16 @@ export const Login: React.FC = () => {
     // Simulate API call
     setTimeout(() => {
       setLoading(false);
+      // Force NGO view when flag is set, regardless of selected role
+      try {
+        const force = localStorage.getItem('force_role');
+        if (force === 'ngo') {
+          navigate('/ngo');
+          return;
+        }
+      } catch (_) {}
+      // Clear preset after use to avoid sticky selection in future sessions
+      try { localStorage.removeItem('preset_role'); } catch (_) {}
       if (role === 'market') navigate('/market');
       else if (role === 'ngo') navigate('/ngo');
       else if (role === 'beneficiary') navigate('/beneficiary');
@@ -39,12 +66,16 @@ export const Login: React.FC = () => {
               className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-prato-green focus:border-transparent outline-none transition-all"
               value={role}
               onChange={(e) => setRole(e.target.value as UserRole)}
+              disabled={roleLocked}
             >
               <option value="public" disabled>Selecione um perfil...</option>
               <option value="market">Mercado / Distribuidor</option>
               <option value="ngo">Entidade Social (ONG)</option>
               <option value="beneficiary">Beneficiário</option>
             </select>
+            {roleLocked && (
+              <p className="text-xs text-prato-muted mt-1">Perfil bloqueado por escolha anterior. Continue para entrar.</p>
+            )}
           </div>
 
           <div>
@@ -52,7 +83,6 @@ export const Login: React.FC = () => {
             <div className="relative">
               <User className="absolute left-3 top-3.5 text-gray-400 w-5 h-5" />
               <input 
-                type="text" 
                 placeholder="000.000.000-00"
                 className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-prato-green focus:border-transparent outline-none transition-all"
               />
@@ -74,7 +104,7 @@ export const Login: React.FC = () => {
             </div>
           </div>
 
-          <Button type="submit" fullWidth className="w-full" loading={loading} icon={<ArrowRight size={20}/>}>
+          <Button type="submit" fullWidth className="w-full" loading={loading} icon={<ArrowRight size={20}/>}> 
             Entrar
           </Button>
         </form>

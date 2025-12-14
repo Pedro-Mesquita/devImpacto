@@ -6,9 +6,10 @@ interface ModalProps {
   title?: string;
   children: React.ReactNode;
   maxWidthClass?: string; // e.g., 'max-w-3xl'
+  fullWidthContent?: boolean; // when true, content spans full modal width
 }
 
-export const Modal: React.FC<ModalProps> = ({ open, onClose, title, children, maxWidthClass = 'max-w-3xl' }) => {
+export const Modal: React.FC<ModalProps> = ({ open, onClose, title, children, maxWidthClass = 'max-w-3xl', fullWidthContent = true }) => {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -20,8 +21,10 @@ export const Modal: React.FC<ModalProps> = ({ open, onClose, title, children, ma
           <h2 className="text-lg font-bold text-prato-dark">{title}</h2>
           <button onClick={onClose} className="text-prato-muted hover:text-prato-dark">✕</button>
         </div>
-        <div className="px-6 py-4 h-[400px] overflow-auto flex items-start justify-center">
-          {children}
+        <div className={`px-6 py-4 h-[400px] overflow-auto ${fullWidthContent ? '' : 'flex items-start justify-center'}`}>
+          <div className={fullWidthContent ? 'w-full' : ''}>
+            {children}
+          </div>
         </div>
       </div>
     </div>

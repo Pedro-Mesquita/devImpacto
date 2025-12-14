@@ -22,7 +22,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, role = 'public' }) => 
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between h-16 items-center">
               <Link to="/" className="flex items-center gap-2">
-                <Heart className="w-8 h-8 text-prato-green fill-prato-green" />
+                <img src="/resources/logo.png" alt="Prato Justo" className="w-8 h-8 object-contain" />
                 <span className="text-xl font-bold text-prato-dark">Prato Justo</span>
               </Link>
               <div className="hidden md:flex space-x-8">
@@ -66,8 +66,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, role = 'public' }) => 
         ];
       case 'ngo':
         return [
-          { icon: <Home size={20} />, label: 'Início', path: '/ngo' },
-          { icon: <ShoppingBag size={20} />, label: 'Ofertas Disponíveis', path: '/ngo/offers' },
+          { icon: <Home size={20} />, label: 'Ofertas Disponíveis', path: '/ngo' },
         ];
       case 'beneficiary':
           return [
@@ -85,7 +84,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, role = 'public' }) => 
       {/* Sidebar Desktop */}
       <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="h-16 flex items-center px-6 border-b border-gray-100">
-          <Heart className="w-8 h-8 text-prato-green fill-prato-green mr-2" />
+          <img src="/resources/logo.png" alt="Prato Justo" className="w-8 h-8 object-contain mr-2" />
           <span className="text-xl font-bold text-prato-dark">Prato Justo</span>
         </div>
         <nav className="p-4 space-y-2">

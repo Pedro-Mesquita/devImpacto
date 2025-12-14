@@ -80,6 +80,58 @@ async function atualizarEstoqueLote(loteId, quantidadeAtual, vendidoTotal) {
   return data;
 }
 
+// Soma vendido_total por lote_id para todos os lotes de um cliente
+async function getVendidoTotalPorCliente(clienteId) {
+  // Primeiro busca os IDs dos lotes do cliente
+  const { data: lotes, error: lotesErr } = await supabase()
+    .from('lotes')
+    .select('id')
+    .eq('cliente_id', clienteId);
+  if (lotesErr) throw lotesErr;
+  const loteIds = (lotes || []).map(l => l.id);
+  if (!loteIds.length) {
+    return [];
+  }
+  // Depois busca estoque_lote filtrando pelos lote_ids
+  const { data: estoque, error: estoqueErr } = await supabase()
+    .from('estoque_lote')
+    .select('lote_id, vendido_total')
+    .in('lote_id', loteIds);
+  if (estoqueErr) throw estoqueErr;
+  const agregados = new Map();
+  for (const row of estoque || []) {
+    const key = row.lote_id;
+    const atual = agregados.get(key) || 0;
+    agregados.set(key, atual + (Number(row.vendido_total) || 0));
+  }
+  return Array.from(agregados.entries()).map(([lote_id, vendido_total_sum]) => ({ lote_id, vendido_total_sum }));
+}
+
+// Soma quantidade_inicial por lote_id para todos os lotes de um cliente
+async function getQuantidadeInicialPorCliente(clienteId) {
+  const { data: lotes, error: lotesErr } = await supabase()
+    .from('lotes')
+    .select('id')
+    .eq('cliente_id', clienteId);
+  if (lotesErr) throw lotesErr;
+  const loteIds = (lotes || []).map(l => l.id);
+  if (!loteIds.length) {
+    return [];
+  }
+  const { data: estoque, error: estoqueErr } = await supabase()
+    .from('estoque_lote')
+    .select('lote_id, quantidade_inicial')
+    .in('lote_id', loteIds);
+  if (estoqueErr) throw estoqueErr;
+  const agregados = new Map();
+  for (const row of estoque || []) {
+    const key = row.lote_id;
+    const atual = agregados.get(key) || 0;
+    agregados.set(key, atual + (Number(row.quantidade_inicial) || 0));
+  }
+  return Array.from(agregados.entries()).map(([lote_id, quantidade_inicial_sum]) => ({ lote_id, quantidade_inicial_sum }));
+}
+
 // Status de lote
 async function atualizarStatusLote(loteId, statusNovo, precoSugeridoAtual = null) {
   // Obter status anteriorconsole
@@ -172,4 +224,6 @@ module.exports = {
   inserirNotificacao,
   registrarExecucaoJob,
   getVendaDoDia,
+  getVendidoTotalPorCliente,
+  getQuantidadeInicialPorCliente,
 };
