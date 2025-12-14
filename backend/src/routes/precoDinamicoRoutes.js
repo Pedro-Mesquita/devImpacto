@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { getPrecoDinamico } = require('../controllers/precoDinamicoController');
 
-// GET /preco-dinamico/:loteId
-router.get('/:loteId', getPrecoDinamico);
+// POST /preco-dinamico
+// Body: { loteIds: ["1", "2", "3"] }
+router.post('/getprecodinamico', getPrecoDinamico);
 
 module.exports = router;

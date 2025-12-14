@@ -55,28 +55,70 @@ function avaliarOfertaDemanda(metrics) {
 // Calcula preço dinâmico considerando validade + oferta/demanda
 // metrics: { totalEstoque, vendidoDesdeEntrada }
 function calcularPrecoDinamicoComMercado(lote, metrics, referencia = new Date()) {
-  const base = calcularPrecoDinamico(lote, referencia);
+  const base = calcularPrecoDinamico(lote, referencia); // desconto por validade
   const demanda = avaliarOfertaDemanda(metrics);
 
-  // Ajuste simples:
-  // - demanda baixa: aplica +10% de desconto adicional sobre o preço já descontado
-  // - demanda média: sem ajuste
-  // - demanda alta: reduz desconto em 10% (aumenta preço)
-  let precoAjustado = base.precoAtualizado;
+  const { totalEstoque = 0, vendidoDesdeEntrada = 0 } = metrics || {};
+  const diasParaVencer = base.diasParaVencer;
 
-  if (demanda.avaliacao === 'baixa') {
-    precoAjustado = Number((precoAjustado * 0.90).toFixed(2));
-  } else if (demanda.avaliacao === 'alta') {
-    precoAjustado = Number((precoAjustado / 0.90).toFixed(2));
+  // Proteção contra dados inválidos
+  if (totalEstoque <= 0 || diasParaVencer < 0) {
+    return {
+      precoAtualizado: base.precoAtualizado,
+      diasParaVencer,
+      descontoValidade: Number((base.descontoAplicado * 100).toFixed(2)),
+      descontoTotal: Number((base.descontoAplicado * 100).toFixed(2)),
+      ofertaDemanda: demanda,
+      fatorAjuste: 1.0,
+    };
   }
+
+  // Percentual de estoque sobrando
+  const percentualRestante = (totalEstoque - vendidoDesdeEntrada) / totalEstoque;
+
+  // Peso de urgência por validade (quanto menos dias → maior urgência)
+  // Quando diasParaVencer = 0 → urgenciaValidade = 1
+  const urgenciaValidade = Math.min(1, 1 - diasParaVencer / 30);
+
+  // Demanda ajustada numericamente
+  const fatorDemanda = {
+    baixa: 1.0,  // mais desconto
+    media: 0.8,
+    alta: 0.6,   // menos desconto
+  }[demanda] || 0.8;
+
+  // Fórmula consolidada:
+  // - estoque cheio → aumenta desconto
+  // - pouco prazo → aumenta desconto
+  // - demanda alta → reduz desconto
+  const impactoMercado =
+    (percentualRestante * 0.5 + urgenciaValidade * 0.5) * fatorDemanda;
+
+  // Fator de ajuste (0.6 até 1.2)
+  let fatorAjuste = 1 - impactoMercado * 0.4; // controla agressividade
+  fatorAjuste = Math.max(0.6, Math.min(1.2, fatorAjuste));
+
+  // Preço final
+  const precoAjustado = Number((base.precoAtualizado * fatorAjuste).toFixed(2));
+
+  // Desconto total sobre o preço base
+  const descontoTotal = Number(
+    ((1 - precoAjustado / lote.precoBase) * 100).toFixed(2)
+  );
 
   return {
     precoAtualizado: precoAjustado,
-    diasParaVencer: base.diasParaVencer,
-    descontoAplicado: base.descontoAplicado,
+    diasParaVencer,
+    descontoValidade: Number((base.descontoAplicado * 100).toFixed(2)),
+    descontoTotal,
     ofertaDemanda: demanda,
+    fatorAjuste: Number(fatorAjuste.toFixed(3)),
+    percentualRestante: Number((percentualRestante * 100).toFixed(2)),
+    urgenciaValidade: Number(urgenciaValidade.toFixed(2)),
+    impactoMercado: Number(impactoMercado.toFixed(3)),
   };
 }
+
 
 // Índice de alerta 1..5 baseado em:
 // - validadeDias: quantos dias a fruta pode ficar no mercado
