@@ -1,4 +1,4 @@
-# HackaImpacto - Segurança Alimentar
+# HackaImpacto - Prato Justo
 
 Sistema inteligente que conecta mercados, produtores e pessoas em vulnerabilidade social, reduzindo desperdício de alimentos através de precificação dinâmica baseada na proximidade da validade.
 
