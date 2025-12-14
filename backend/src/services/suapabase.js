@@ -11,11 +11,22 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || proce
 
 // Build a lightweight no-op client to avoid crashing in local/dev when envs are missing
 function createNoopClient() {
-	const noop = async () => ({ data: [], error: null });
-	const inOp = () => ({ select: noop, in: noop });
+	// Minimal query builder that supports select().in() chaining
+	const result = { data: [], error: null };
+	const chain = {
+		in: async () => result,
+		eq: async () => result,
+	};
+	const builder = () => ({
+		select: () => chain,
+		// support direct chains in case select isn't used
+		in: async () => result,
+		eq: async () => result,
+		then: undefined,
+	});
 	return {
-		from: () => ({ select: noop, in: noop }),
-		auth: { getUser: noop },
+		from: () => builder(),
+		auth: { getUser: async () => result },
 	};
 }
 
