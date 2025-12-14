@@ -36,12 +36,23 @@ export const Login: React.FC = () => {
       try {
         const force = localStorage.getItem('force_role');
         if (force === 'ngo') {
+          // clear flags then route
+          try { localStorage.removeItem('force_role'); } catch (_) {}
+          try { localStorage.removeItem('preset_role'); } catch (_) {}
           navigate('/ngo');
+          return;
+        }
+        const preset = localStorage.getItem('preset_role');
+        if (preset === 'market') {
+          try { localStorage.removeItem('preset_role'); } catch (_) {}
+          try { localStorage.removeItem('force_role'); } catch (_) {}
+          navigate('/market');
           return;
         }
       } catch (_) {}
       // Clear preset after use to avoid sticky selection in future sessions
       try { localStorage.removeItem('preset_role'); } catch (_) {}
+      try { localStorage.removeItem('force_role'); } catch (_) {}
       if (role === 'market') navigate('/market');
       else if (role === 'ngo') navigate('/ngo');
       else if (role === 'beneficiary') navigate('/beneficiary');
