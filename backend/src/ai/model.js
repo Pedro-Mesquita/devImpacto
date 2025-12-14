@@ -3,7 +3,13 @@
  * Treina uma rede neural para prever probabilidade de vender todo o estoque
  */
 
-const tf = require('@tensorflow/tfjs-node');
+let tf;
+try {
+  tf = require('@tensorflow/tfjs-node');
+} catch (e) {
+  console.warn('[AI] @tensorflow/tfjs-node not available, using stub predictions. Install it to enable training.');
+  tf = null;
+}
 const fs = require('fs');
 const path = require('path');
 const { gerarDatasetBalanceado } = require('./dataset');
@@ -11,6 +17,7 @@ const { gerarDatasetBalanceado } = require('./dataset');
 const MODEL_PATH = path.join(__dirname, '../../model');
 
 let model = null;
+let aiEnabled = !!tf;
 
 /**
  * Normaliza um valor entre min e max para 0-1
@@ -39,6 +46,9 @@ function categoriaParaOneHot(categoria) {
  * Cria a arquitetura da rede neural
  */
 function criarModelo() {
+  if (!tf) {
+    throw new Error('TensorFlow not available');
+  }
   console.log('🧠 [MODEL] Criando arquitetura da rede neural...');
 
   const modelo = tf.sequential({
@@ -125,6 +135,10 @@ async function trainModel() {
   console.log('🤖 [MODEL] Iniciando treinamento');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
+  if (!tf) {
+    console.warn('[AI] Train skipped: TensorFlow not available');
+    return;
+  }
   try {
     // 1. Cria modelo
     model = criarModelo();
@@ -173,7 +187,7 @@ async function trainModel() {
  * Salva o modelo treinado
  */
 async function salvarModelo() {
-  if (!model) {
+  if (!model || !tf) {
     console.warn('⚠️  [MODEL] Modelo não foi criado');
     return;
   }
@@ -191,6 +205,9 @@ async function salvarModelo() {
  * Carrega modelo treinado do disco
  */
 async function carregarModelo() {
+  if (!tf) {
+    return false;
+  }
   try {
     console.log('📂 [MODEL] Verificando modelo salvo...');
 
@@ -228,7 +245,7 @@ async function inicializarModelo() {
   }
 
   if (!model) {
-    throw new Error('Falha ao inicializar modelo de IA');
+    aiEnabled = false;
   }
 }
 
@@ -239,9 +256,11 @@ function predict(input) {
   console.log(`\n🔮 [MODEL] Fazendo predição...`);
   console.log('   Input recebido:', input);
 
-  if (!model) {
-    console.error('❌ [MODEL] Modelo não foi inicializado!');
-    throw new Error('Modelo de IA não inicializado. Execute inicializarModelo() primeiro.');
+  if (!aiEnabled || !tf || !model) {
+    // Fallback heuristic when AI is disabled
+    const prob = 0.5; // neutral default
+    const descontoIdeal = calcularDescontoIdeal(prob);
+    return { probabilidadeVenderTudo: prob, descontoIdeal };
   }
 
   try {
@@ -301,8 +320,8 @@ function calcularDescontoIdeal(probabilidade) {
   try {
     await inicializarModelo();
   } catch (error) {
-    console.error('❌ [MODEL] Erro fatal na inicialização:', error);
-    process.exit(1);
+    console.warn('[AI] Inicialização de IA desabilitada ou falhou; continuando sem IA:', error.message);
+    aiEnabled = false;
   }
 })();
 
