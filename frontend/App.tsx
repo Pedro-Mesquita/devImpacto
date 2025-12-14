@@ -2,6 +2,7 @@ import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Landing } from './pages/Landing';
 import { Login } from './pages/auth/Login';
+import { Cadastro } from './pages/auth/Cadastro';
 import { MarketLogin } from './pages/auth/MarketLogin';
 import { MarketProducts } from './pages/dashboard/MarketProducts';
 import { MarketDashboard } from './pages/dashboard/MarketDashboard';
@@ -14,8 +15,9 @@ const App: React.FC = () => {
     <HashRouter>
       <Routes>
         <Route path="/" element={<Landing />} />
-  <Route path="/login" element={<Login />} />
-  <Route path="/login/market" element={<MarketLogin />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/cadastro" element={<Cadastro />} />
+        <Route path="/login/market" element={<MarketLogin />} />
         
         {/* Market Routes */}
         <Route path="/market" element={<MarketDashboard />} />

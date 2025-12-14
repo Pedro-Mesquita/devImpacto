@@ -43,7 +43,7 @@ export const Login: React.FC = () => {
               <option value="public" disabled>Selecione um perfil...</option>
               <option value="market">Mercado / Distribuidor</option>
               <option value="ngo">Entidade Social (ONG)</option>
-              <option value="beneficiary">Beneficiário (CadUnico)</option>
+              <option value="beneficiary">Beneficiário</option>
             </select>
           </div>
 
@@ -81,7 +81,7 @@ export const Login: React.FC = () => {
 
         <div className="mt-8 pt-6 border-t border-gray-100 text-center">
           <p className="text-prato-muted">
-            Ainda não tem conta? <a href="#" className="text-prato-green font-semibold hover:underline">Cadastre-se</a>
+            Ainda não tem conta? <button onClick={() => navigate('/cadastro')} className="text-prato-green font-semibold hover:underline">Cadastre-se</button>
           </p>
         </div>
       </div>

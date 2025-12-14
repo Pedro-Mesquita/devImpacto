@@ -12,7 +12,7 @@ try {
 }
 const fs = require('fs');
 const path = require('path');
-const { gerarDatasetBalanceado } = require('./dataset');
+const { gerarDatasetBalanceado, buscarDatasetDoBanco, obterEstatisticasDataset, bancoTemDados } = require('./dataset');
 
 const MODEL_PATH = path.join(__dirname, '../../model');
 
@@ -128,7 +128,7 @@ function processarDataset(dataset) {
 }
 
 /**
- * Treina o modelo com dados mockados
+ * Treina o modelo com histórico de vendas DO BANCO
  */
 async function trainModel() {
   console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -140,36 +140,60 @@ async function trainModel() {
     return;
   }
   try {
-    // 1. Cria modelo
+    // 1. Verifica se tem dados no banco
+    const temDados = await bancoTemDados(1);
+    if (!temDados) {
+      throw new Error(
+        '❌ Banco de dados vazio! Execute primeiro: npm run setup:dataset\n' +
+        '   Isso vai popular a tabela ia_training_dataset com histórico de vendas.'
+      );
+    }
+
+    // 2. Cria modelo
     model = criarModelo();
 
-    // 2. Gera dataset
-    console.log('📚 [MODEL] Gerando dataset balanceado...');
-    const dataset = gerarDatasetBalanceado(300);
-    console.log(`✅ [MODEL] Dataset gerado com ${dataset.length} registros\n`);
+    // 3. Busca dataset do banco
+    console.log('📖 [MODEL] Carregando histórico de vendas do banco...');
+    const dataset = await buscarDatasetDoBanco(1);
 
-    // 3. Processa dataset
+    if (!dataset || dataset.length === 0) {
+      throw new Error('Nenhum dado encontrado no banco de dados');
+    }
+
+    // 4. Obtém estatísticas
+    const stats = await obterEstatisticasDataset(1);
+    console.log('📊 [MODEL] Estatísticas do Histórico:');
+    console.log(`   Total: ${stats.totalRegistros} vendas`);
+    console.log(`   Vendeu Tudo: ${stats.vendeuTudo} (${stats.percentualBalanceamento.vendeuTudo})`);
+    console.log(`   Não Vendeu: ${stats.naoVendeu} (${stats.percentualBalanceamento.naoVendeu})`);
+    console.log(`   Categorias:`, stats.porCategoria);
+    console.log(`   Demandas:`, stats.porDemanda);
+    console.log(`   Média de dias restantes: ${stats.mediadiasRestantes}`);
+    console.log(`   Média de estoque vendido: ${stats.mediaEstoqueVendido}%\n`);
+
+    // 5. Processa dataset
     const { inputs, outputs } = processarDataset(dataset);
 
-    // 4. Treina
-    console.log('🏋️  [MODEL] Iniciando treinamento...\n');
+    // 6. Treina
+    console.log('🏋️  [MODEL] Treinando com dados históricos...\n');
     const history = await model.fit(inputs, outputs, {
       epochs: 50,
       batchSize: 32,
       validationSplit: 0.2,
       verbose: 1,
-      shuffle: true,
+      shuffle: true
     });
 
-    console.log('\n✅ [MODEL] Treinamento completo!');
-    console.log(
-      `   Acurácia final: ${(history.history.acc[history.history.acc.length - 1] * 100).toFixed(
-        2
-      )}%`
-    );
+    const acuraciaFinal = history.history.acc[history.history.acc.length - 1];
+    const lossFinal = history.history.loss[history.history.loss.length - 1];
 
-    // 5. Salva modelo
-    console.log('\n💾 [MODEL] Salvando modelo...');
+    console.log('\n✅ [MODEL] Treinamento Concluído!');
+    console.log(`   📊 Acurácia: ${(acuraciaFinal * 100).toFixed(2)}%`);
+    console.log(`   📉 Loss: ${lossFinal.toFixed(6)}`);
+    console.log(`   📚 Dataset: ${dataset.length} registros do histórico\n`);
+
+    // 7. Salva modelo
+    console.log('💾 [MODEL] Salvando modelo treinado...');
     await salvarModelo();
 
     // Limpa tensors
@@ -178,7 +202,7 @@ async function trainModel() {
 
     console.log('✅ [MODEL] Modelo salvo com sucesso!\n');
   } catch (error) {
-    console.error('❌ [MODEL] Erro ao treinar:', error);
+    console.error('❌ [MODEL] Erro ao treinar:', error.message);
     throw error;
   }
 }

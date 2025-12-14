@@ -1,0 +1,7 @@
+{
+  "scripts": {
+    "setup:dataset": "node script.js",
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  }
+}
