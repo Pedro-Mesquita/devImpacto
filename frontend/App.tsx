@@ -3,8 +3,8 @@ import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Landing } from './pages/Landing';
 import { Login } from './pages/auth/Login';
 import { MarketLogin } from './pages/auth/MarketLogin';
-import { MarketDashboard } from './pages/dashboard/MarketDashboard';
 import { MarketProducts } from './pages/dashboard/MarketProducts';
+import { MarketDashboard } from './pages/dashboard/MarketDashboard';
 import { ProductForm } from './pages/dashboard/ProductForm';
 import { NGODashboard } from './pages/dashboard/NGODashboard';
 import { BeneficiaryDashboard } from './pages/dashboard/BeneficiaryDashboard';
@@ -20,6 +20,11 @@ const App: React.FC = () => {
         {/* Market Routes */}
         <Route path="/market" element={<MarketDashboard />} />
   <Route path="/market/products" element={<MarketProducts />} />
+        <Route path="/login" element={<Login />} />
+        
+        {/* Market Routes */}
+        <Route path="/market" element={<MarketDashboard />} />
+        <Route path="/market/products" element={<MarketDashboard />} /> {/* Simplified */}
         <Route path="/market/new-product" element={<ProductForm />} />
         
         {/* NGO Routes */}

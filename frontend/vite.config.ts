@@ -9,9 +9,9 @@ export default defineConfig(({ mode }) => {
         port: 3000,
         host: '0.0.0.0',
           proxy: {
-            // Proxy API calls to backend running on port 4000
+            // Proxy API calls to backend running on port 4001
             '/api': {
-              target: 'http://localhost:4000',
+              target: 'http://localhost:4001',
               changeOrigin: true,
               ws: false,
             },
